@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +12,9 @@ using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
+using Dropbox.Api.Files;
+using Dropbox.Api;
+using System;
 
 namespace Bkm.Online
 {
@@ -33,15 +35,14 @@ namespace Bkm.Online
                 var message = update.Message;
                 if(message.Photo != null && message.Photo.Any())
                 {
-                    var data = await DownloadPhotos(message.Photo);
-
+                    await DownloadPhotos(message.Photo);
                 }
             }
 
             return new OkResult();
         }
 
-        private static async Task<byte[]> DownloadPhotos(PhotoSize[] photos)
+        private static async Task DownloadPhotos(PhotoSize[] photos)
         {
             var photo = photos.OrderByDescending(x=>x.FileSize).FirstOrDefault();
 
@@ -49,14 +50,18 @@ namespace Bkm.Online
                     .AddEnvironmentVariables()
                     .AddUserSecrets(Assembly.GetExecutingAssembly(), true)
                     .Build();
-            var bot = new TelegramBotClient(config["apikey"]);
+
+            var bot = new TelegramBotClient(config["telegramKey"]);
 
             var file = await bot.GetFileAsync(photo.FileId);
             using MemoryStream ms = new MemoryStream();
             await bot.DownloadFileAsync(file.FilePath, ms);
+            ms.Position = 0;
 
-            return ms.ToArray();
+            using (var dbx = new DropboxClient(config["dropboxKey"]))
+			{
+				await dbx.Files.UploadAsync($"/BkmTbgOnline/{Path.GetFileName(file.FilePath)}", WriteMode.Overwrite.Instance, body: ms);
+			}
         }
     }
-
 }
