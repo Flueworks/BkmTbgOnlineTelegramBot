@@ -37,6 +37,10 @@ namespace Bkm.Online
                 {
                     await DownloadPhotos(message.Photo);
                 }
+                if(message.Video != null)
+                {
+                    await DownloadVideo(message.Video);
+                }
             }
 
             return new OkResult();
@@ -54,6 +58,26 @@ namespace Bkm.Online
             var bot = new TelegramBotClient(config["telegramKey"]);
 
             var file = await bot.GetFileAsync(photo.FileId);
+            using MemoryStream ms = new MemoryStream();
+            await bot.DownloadFileAsync(file.FilePath, ms);
+            ms.Position = 0;
+
+            using (var dbx = new DropboxClient(config["dropboxKey"]))
+			{
+				await dbx.Files.UploadAsync($"/BkmTbgOnline/{Path.GetFileName(file.FilePath)}", WriteMode.Overwrite.Instance, body: ms);
+			}
+        }
+
+        private static async Task DownloadVideo(Video video)
+        {
+            var config = new ConfigurationBuilder()
+                    .AddEnvironmentVariables()
+                    .AddUserSecrets(Assembly.GetExecutingAssembly(), true)
+                    .Build();
+
+            var bot = new TelegramBotClient(config["telegramKey"]);
+
+            var file = await bot.GetFileAsync(video.FileId);
             using MemoryStream ms = new MemoryStream();
             await bot.DownloadFileAsync(file.FilePath, ms);
             ms.Position = 0;
