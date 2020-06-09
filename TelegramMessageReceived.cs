@@ -64,7 +64,7 @@ namespace Bkm.Online
 
             using (var dbx = new DropboxClient(config["dropboxKey"]))
 			{
-				await dbx.Files.UploadAsync($"/BkmTbgOnline/{Path.GetFileName(file.FilePath)}", WriteMode.Overwrite.Instance, body: ms);
+				await dbx.Files.UploadAsync($"/{config["dropboxFolder"]}/{Path.GetFileName(file.FilePath)}", WriteMode.Overwrite.Instance, body: ms);
 			}
         }
 
@@ -84,7 +84,7 @@ namespace Bkm.Online
 
             using (var dbx = new DropboxClient(config["dropboxKey"]))
 			{
-				await dbx.Files.UploadAsync($"/BkmTbgOnline/{Path.GetFileName(file.FilePath)}", WriteMode.Overwrite.Instance, body: ms);
+				await dbx.Files.UploadAsync($"/{config["dropboxFolder"]}/{Path.GetFileName(file.FilePath)}", WriteMode.Overwrite.Instance, body: ms);
 			}
         }
     }
